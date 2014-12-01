@@ -285,7 +285,7 @@ check_constraints([Field|Tail], Bindings) ->
 					Bindings2 = lists:keyreplace(Name, 1, Bindings,
 						{Name, Value2}),
 					check_constraints(Tail, Bindings2);
-				false ->
+				_ ->
 					nomatch
 			end
 	end.
@@ -524,22 +524,22 @@ match_info_test_() ->
 	end} || {H, P, R} <- Tests].
 
 match_constraints_test() ->
-	Dispatch = [{'_', [],
-		[{[<<"path">>, value], [{value, int}], match, []}]}],
-	{ok, _, [], [{value, 123}], _, _} = match(Dispatch,
-		<<"ninenines.eu">>, <<"/path/123">>),
-	{ok, _, [], [{value, 123}], _, _} = match(Dispatch,
-		<<"ninenines.eu">>, <<"/path/123/">>),
-	{error, notfound, path} = match(Dispatch,
-		<<"ninenines.eu">>, <<"/path/NaN/">>),
-	Dispatch2 = [{'_', [], [{[<<"path">>, username],
-		[{username, fun(Value) -> Value =:= cowboy_bstr:to_lower(Value) end}],
-		match, []}]}],
-	{ok, _, [], [{username, <<"essen">>}], _, _} = match(Dispatch2,
-		<<"ninenines.eu">>, <<"/path/essen">>),
-	{error, notfound, path} = match(Dispatch2,
-		<<"ninenines.eu">>, <<"/path/ESSEN">>),
-	ok.
+    Dispatch = [{'_', [],
+		 [{[<<"path">>, value], [{value, int}], match, []}]}],
+    {ok, _, [], [{value, 123}], _, _} = match(Dispatch,
+					      <<"ninenines.eu">>, <<"/path/123">>),
+    {ok, _, [], [{value, 123}], _, _} = match(Dispatch,
+					      <<"ninenines.eu">>, <<"/path/123/">>),
+    {error, notfound, path} = match(Dispatch,
+				    <<"ninenines.eu">>, <<"/path/NaN/">>),
+    Dispatch2 = [{'_', [], [{[<<"path">>, username],
+			     [{username, fun(Value) -> Value =:= cowboy_bstr:to_lower(Value) end}],
+			     match, []}]}],
+    {ok, _, [], [{username, <<"essen">>}], _, _} = match(Dispatch2,
+							 <<"ninenines.eu">>, <<"/path/essen">>),
+    {error, notfound, path} = match(Dispatch2,
+				    <<"ninenines.eu">>, <<"/path/ESSEN">>),
+    ok.
 
 match_same_bindings_test() ->
 	Dispatch = [{[same, same], [], [{'_', [], match, []}]}],

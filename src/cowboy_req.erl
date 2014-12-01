@@ -1247,13 +1247,19 @@ kvlist_to_map(Keys, [{Key, Value}|Tail], Map) ->
 		kvlist_to_map(Keys, Tail, Map)
 	end.
 
-%% Loop through fields, if value is missing and no default, crash;
+%% Loop through fields, if value is missing and no default, return {false, Key};
 %% else if value is missing and has a default, set default;
-%% otherwise apply constraints. If constraint fails, crash.
+%% otherwise apply constraints. If constraint fails, return {false, Key, ConstraintReturn}.
 filter([], Map) ->
-	Map;
+	{ok, Map};
 filter([{Key, Constraints}|Tail], Map) ->
-	filter_constraints(Tail, Map, Key, maps:get(Key, Map), Constraints);
+    try maps:get(Key, Map) of
+		Value ->
+			filter_constraints(Tail, Map, Key, Value, Constraints)
+    catch
+		error:bad_key ->
+			{false, Key}
+    end;
 filter([{Key, Constraints, Default}|Tail], Map) ->
 	case maps:find(Key, Map) of
 		{ok, Value} ->
@@ -1262,16 +1268,24 @@ filter([{Key, Constraints, Default}|Tail], Map) ->
 			filter(Tail, maps:put(Key, Default, Map))
 	end;
 filter([Key|Tail], Map) ->
-	true = maps:is_key(Key, Map),
-	filter(Tail, Map).
+	case maps:is_key(Key, Map) of
+	    true ->
+		filter(Tail, Map);
+	    false ->
+		{false, Key}
+	end.
 
 filter_constraints(Tail, Map, Key, Value, Constraints) ->
-	case cowboy_constraints:validate(Value, Constraints) of
-		true ->
-			filter(Tail, Map);
-		{true, Value2} ->
-			filter(Tail, maps:put(Key, Value2, Map))
-	end.
+    case cowboy_constraints:validate(Value, Constraints) of
+	true ->
+	    filter(Tail, Map);
+	{true, Value2} ->
+	    filter(Tail, maps:put(Key, Value2, Map));
+	false ->
+	    {false, Key};
+	{false, Any} ->
+	    {false, Key, Any}
+    end.
 
 %% Tests.
 
@@ -1327,4 +1341,37 @@ merge_headers_test_() ->
 		  {<<"server">>,<<"Cowboy">>}]}
 	],
 	[fun() -> Res = merge_headers(L,R) end || {L, R, Res} <- Tests].
+
+constraints_test() ->
+	Fields1 = [key1, {key2, int}],
+	{ok, #{key1 := <<"value1">>, key2 := 42}} =
+		filter(Fields1, kvlist_to_map(Fields1,
+									  [{<<"key1">>, <<"value1">>},
+									   {<<"key2">>, <<"42">>}])),
+    Fields2 = [key1, {key2, int}],
+    {false, key2} =
+		filter(Fields2, kvlist_to_map(Fields2,
+									  [{<<"key1">>, <<"value1">>},
+									   {<<"key2">>, <<"string_data">>}])),
+    Msg = "not a base 16 integer",
+    F = fun(X) ->
+				try list_to_integer(binary_to_list(X), 16) of
+					Value ->
+						{true, Value}
+				catch _:_ ->
+						{false, Msg}
+				end
+		end,
+    Fields3 = [key1, {key2, F}],
+    {false, key2} =
+		filter(Fields3, kvlist_to_map(Fields3,
+									  [{<<"key1">>, <<"value1">>}])),
+    {false, key2, Msg} =
+		filter(Fields3, kvlist_to_map(Fields3,
+									  [{<<"key1">>, <<"value1">>},
+									   {<<"key2">>, <<"string_data">>}])),
+    {ok, #{key1 := <<"value1">>, key2 := 255}} =
+		filter(Fields3, kvlist_to_map(Fields3,
+									  [{<<"key1">>, <<"value1">>},
+									   {<<"key2">>, <<"ff">>}])).
 -endif.

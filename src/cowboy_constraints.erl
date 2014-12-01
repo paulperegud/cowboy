@@ -37,8 +37,8 @@ validate_list(Value, [Constraint|Tail], State) ->
 			validate_list(Value, Tail, State);
 		{true, Value2} ->
 			validate_list(Value2, Tail, modified);
-		false ->
-			false
+		Other ->
+			Other
 	end.
 
 %% @todo {int, From, To}, etc.
