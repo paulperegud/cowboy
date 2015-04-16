@@ -19,7 +19,7 @@
 -type constraint() :: int | nonempty | fun().
 -export_type([constraint/0]).
 
--spec validate(binary(), [constraint()]) -> true | {true, any()} | false.
+-spec validate(binary(), [constraint()]) -> true | {true, any()} | false | {false, any()}.
 validate(Value, [Constraint]) ->
 	apply_constraint(Value, Constraint);
 validate(Value, Constraints) when is_list(Constraints) ->

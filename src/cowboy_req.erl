@@ -221,7 +221,7 @@ qs(Req) ->
 parse_qs(#http_req{qs=Qs}) ->
 	cow_qs:parse_qs(Qs).
 
--spec match_qs(cowboy:fields(), req()) -> map().
+-spec match_qs(cowboy:fields(), req()) -> {ok, map()} | {false, any()} | {false, any(), any()}.
 match_qs(Fields, Req) ->
 	filter(Fields, kvlist_to_map(Fields, parse_qs(Req))).
 
@@ -380,7 +380,7 @@ parse_header(Name, Req, Default, ParseFun) ->
 parse_cookies(Req) ->
 	parse_header(<<"cookie">>, Req).
 
--spec match_cookies(cowboy:fields(), req()) -> map().
+-spec match_cookies(cowboy:fields(), req()) -> {ok, map()} | {false, any()} | {false, any(), any()}.
 match_cookies(Fields, Req) ->
 	filter(Fields, kvlist_to_map(Fields, parse_cookies(Req))).
 
@@ -1250,6 +1250,7 @@ kvlist_to_map(Keys, [{Key, Value}|Tail], Map) ->
 %% Loop through fields, if value is missing and no default, return {false, Key};
 %% else if value is missing and has a default, set default;
 %% otherwise apply constraints. If constraint fails, return {false, Key, ConstraintReturn}.
+-spec filter([{Key :: any(), any()}], #{}) -> {false, Key :: any()} | {false, Key::any(), ConstraintReturn::any()}.
 filter([], Map) ->
 	{ok, Map};
 filter([{Key, Constraints}|Tail], Map) ->
