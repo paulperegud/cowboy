@@ -28,6 +28,7 @@
 -export([qs/1]).
 -export([parse_qs/1]).
 -export([match_qs/2]).
+-export([kvlist_to_map/2, filter/2]).
 -export([host_url/1]).
 -export([url/1]).
 -export([binding/2]).
@@ -1214,6 +1215,7 @@ status(B) when is_binary(B) -> B.
 %% Create map, convert keys to atoms and group duplicate keys into lists.
 %% Keys that are not found in the user provided list are entirely skipped.
 %% @todo Can probably be done directly while parsing.
+-spec kvlist_to_map(cowboy:fields(), map()) -> map().
 kvlist_to_map(Fields, KvList) ->
 	Keys = [case K of
 		{Key, _} -> Key;
