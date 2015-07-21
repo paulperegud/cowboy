@@ -1252,7 +1252,7 @@ kvlist_to_map(Keys, [{Key, Value}|Tail], Map) ->
 %% Loop through fields, if value is missing and no default, return {false, Key};
 %% else if value is missing and has a default, set default;
 %% otherwise apply constraints. If constraint fails, return {false, Key, ConstraintReturn}.
--spec filter([{Key :: any(), any()}], #{}) -> {false, Key :: any()} | {false, Key::any(), ConstraintReturn::any()}.
+-spec filter([{Key :: any(), any()}], #{}) -> {ok, map()} | {false, Key :: any()} | {false, Key::any(), ConstraintReturn::any()}.
 filter([], Map) ->
 	{ok, Map};
 filter([{Key, Constraints}|Tail], Map) ->
