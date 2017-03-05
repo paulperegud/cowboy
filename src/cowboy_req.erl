@@ -1260,7 +1260,7 @@ filter([{Key, Constraints}|Tail], Map) ->
 		Value ->
 			filter_constraints(Tail, Map, Key, Value, Constraints)
     catch
-		error:bad_key ->
+		error:{badkey, _} ->
 			{false, Key}
     end;
 filter([{Key, Constraints, Default}|Tail], Map) ->
