@@ -10,17 +10,21 @@
 
 %% API.
 start(_Type, _Args) ->
-	Dispatch = cowboy_router:compile([
-		{'_', [
-			{"/", cowboy_static, {priv_file, websocket, "index.html"}},
-			{"/websocket", ws_handler, []},
-			{"/static/[...]", cowboy_static, {priv_dir, websocket, "static"}}
-		]}
-	]),
-	{ok, _} = cowboy:start_clear(http, [{port, 8080}], #{
-		env => #{dispatch => Dispatch}
-	}),
-	websocket_sup:start_link().
+    D = [{'_', [
+                {"/", cowboy_static, {priv_file, websocket, "index.html"}},
+                {"/websocket", ws_handler, []},
+                {"/static/[...]", cowboy_static, {priv_dir, websocket, "static"}}
+               ]}],
+    Dispatch = cowboy_router:compile(D),
+    PrivDir = code:priv_dir(websocket),
+    io:fwrite("~nPrivDir: ~p~n", [PrivDir]),
+    {ok, _} = cowboy:start_tls(https,
+                               [{cacertfile, PrivDir ++ "/ssl/cowboy-ca.crt"},
+                                {certfile, PrivDir ++ "/ssl/server.crt"},
+                                {keyfile, PrivDir ++ "/ssl/server.key"},
+                                {port, 8443}],
+                               #{ env => #{dispatch => Dispatch} }),
+    websocket_sup:start_link().
 
 stop(_State) ->
 	ok.
