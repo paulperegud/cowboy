@@ -8,6 +8,11 @@
 -export([start/2]).
 -export([stop/1]).
 
+-export([ping_all/0]).
+
+ping_all() ->
+    gproc:bcast({p, l, bot}, {ping, "This is ping"}).
+
 %% API.
 start(_Type, _Args) ->
     D = [{'_', [
